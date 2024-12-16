@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pagination, Sorting, and Filtering</title>
+    <style>
+      #cont {
+        width: 80%;
+        margin: auto;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+      }
+      #cont > div {
+        border: 1px solid black;
+        height: 300px;
+        text-align: center;
+      }
+      img {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+      }
+      #pagination-div {
+        margin: 20px auto;
+        text-align: center;
+      }
+      .page-btn {
+        margin: 0 5px;
+        padding: 5px 10px;
+        border: 1px solid black;
+        cursor: pointer;
+      }
+      .page-btn.active {
+        background-color: #000;
+        color: #fff;
+      }
+      #filter-sort {
+        margin: 20px auto;
+        width: 80%;
+        display: flex;
+        justify-content: space-between;
+      }
+      select,
+      input {
+        padding: 5px;
+      }
+      .page-btn:hover {
+        background-color: #f0f0f0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="filter-sort">
+      <div>
+        <label for="sort">Sort By:</label>
+        <select id="sort">
+          <option value="default">Default</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+        </select>
+      </div>
+      <div>
+        <label for="filter">Filter By Price:</label>
+        <select id="filter">
+          <option value="all">All</option>
+          <option value="low">Below $50</option>
+          <option value="medium">$50 - $100</option>
+          <option value="high">Above $100</option>
+        </select>
+      </div>
+    </div>
+    <div id="pagination-div"></div>
+    <div id="cont"></div>
+
+    <script>
+      let originalData = [];
+      let filteredAndSortedData = [];
+      let itemsPerPage = 4;
+
+      window.onload = async () => {
+        let data = await getData();
+        originalData = [...data];
+        filteredAndSortedData = [...data]; // Initialize with original data
+
+        createPagination(filteredAndSortedData, itemsPerPage);
+        displayPaginationData(filteredAndSortedData, 1, itemsPerPage);
+
+        document.getElementById("sort").addEventListener("change", handleSort);
+        document
+          .getElementById("filter")
+          .addEventListener("change", handleFilter);
+      };
+
+      async function getData() {
+        try {
+          let res = await fetch("https://fakestoreapi.com/products");
+          let data = await res.json();
+          return data;
+        } catch (err) {
+          console.log(err);
+        }
+      }
+
+      function displayData(arr) {
+        let cont = document.getElementById("cont");
+        let cards = arr.map((el) => {
+          return `
+            <div class="card">
+              <img src="${el.image}" alt="Product Image" />
+              <h4>Price: $${el.price}</h4>
+            </div>
+          `;
+        });
+        cont.innerHTML = cards.join("");
+      }
+
+      function createPagination(arr, itemsPerPage) {
+        let totalNumberOfPages = Math.ceil(arr.length / itemsPerPage);
+        let paginationDiv = document.getElementById("pagination-div");
+        paginationDiv.innerHTML = "";
+
+        // Add Prev button
+        let prevBtn = `<button class="page-btn prev-btn" disabled>Prev</button>`;
+        paginationDiv.innerHTML += prevBtn;
+
+        // Add page buttons
+        let buttonArray = [];
+        for (let i = 1; i <= totalNumberOfPages; i++) {
+          let btn = `<button class="page-btn" data-page="${i}">${i}</button>`;
+          buttonArray.push(btn);
+        }
+        paginationDiv.innerHTML += buttonArray.join("");
+
+        // Add Next button
+        let nextBtn = `<button class="page-btn next-btn" ${
+          totalNumberOfPages > 1 ? "" : "disabled"
+        }>Next</button>`;
+        paginationDiv.innerHTML += nextBtn;
+
+        let pageButtons = document.querySelectorAll(
+          ".page-btn:not(.prev-btn):not(.next-btn)"
+        );
+        let prevButton = document.querySelector(".prev-btn");
+        let nextButton = document.querySelector(".next-btn");
+
+        pageButtons.forEach((btn) => {
+          btn.addEventListener("click", function () {
+            let currentPage = parseInt(this.dataset.page);
+            pageButtons.forEach((button) => button.classList.remove("active"));
+            this.classList.add("active");
+            displayPaginationData(arr, currentPage, itemsPerPage);
+            togglePrevNextButtons(
+              currentPage,
+              totalNumberOfPages,
+              prevButton,
+              nextButton
+            );
+          });
+        });
+
+        // Prev button functionality
+        prevButton.addEventListener("click", function () {
+          let activeButton = document.querySelector(".page-btn.active");
+          if (activeButton) {
+            let currentPage = parseInt(activeButton.dataset.page);
+            if (currentPage > 1) {
+              currentPage--;
+              pageButtons[currentPage - 1].click();
+            }
+          }
+        });
+
+        // Next button functionality
+        nextButton.addEventListener("click", function () {
+          let activeButton = document.querySelector(".page-btn.active");
+          if (activeButton) {
+            let currentPage = parseInt(activeButton.dataset.page);
+            if (currentPage < totalNumberOfPages) {
+              currentPage++;
+              pageButtons[currentPage - 1].click();
+            }
+          }
+        });
+
+        if (pageButtons.length > 0) {
+          pageButtons[0].classList.add("active");
+        }
+      }
+
+      function displayPaginationData(arr, currentPage, itemsPerPage) {
+        let startIdx = (currentPage - 1) * itemsPerPage;
+        let endIdx = currentPage * itemsPerPage;
+        let paginatedArr = arr.slice(startIdx, endIdx);
+        displayData(paginatedArr);
+      }
+
+      function handleSort() {
+        let sortOption = document.getElementById("sort").value;
+        if (sortOption === "price-asc") {
+          filteredAndSortedData.sort((a, b) => a.price - b.price);
+        } else if (sortOption === "price-desc") {
+          filteredAndSortedData.sort((a, b) => b.price - a.price);
+        } else {
+          filteredAndSortedData = [...originalData]; // Default order
+        }
+        callPagination();
+      }
+
+      function handleFilter() {
+        let filterOption = document.getElementById("filter").value;
+
+        if (filterOption === "low") {
+          filteredAndSortedData = originalData.filter(
+            (item) => item.price < 50
+          );
+        } else if (filterOption === "medium") {
+          filteredAndSortedData = originalData.filter(
+            (item) => item.price >= 50 && item.price <= 100
+          );
+        } else if (filterOption === "high") {
+          filteredAndSortedData = originalData.filter(
+            (item) => item.price > 100
+          );
+        } else {
+          filteredAndSortedData = [...originalData]; // All
+        }
+        callPagination();
+      }
+
+      function callPagination() {
+        createPagination(filteredAndSortedData, itemsPerPage);
+        displayPaginationData(filteredAndSortedData, 1, itemsPerPage);
+      }
+
+      function togglePrevNextButtons(
+        currentPage,
+        totalPages,
+        prevButton,
+        nextButton
+      ) {
+        if (currentPage === 1) {
+          prevButton.disabled = true;
+        } else {
+          prevButton.disabled = false;
+        }
+
+        if (currentPage === totalPages) {
+          nextButton.disabled = true;
+        } else {
+          nextButton.disabled = false;
+        }
+      }
+    </script>
+  </body>
+</html>
