@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo Application</title>
+  <link rel="stylesheet" href="styles/main.css">
+
+  <link rel="stylesheet" href="./styles/todo.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main>
+    <h1>Todo Application</h1>
+    <button id="add-todo-btn">Add Todo</button>
+
+    <!-- Modal for Add/Update Todo -->
+    <div id="todo-modal" class="modal">
+      <div class="modal-content">
+        <span class="close" id="close-modal">&times;</span>
+        <h2 id="modal-title">Add Todo</h2>
+        <form id="todo-form">
+          <label for="task">Task:</label>
+          <input type="text" id="task" name="task" required>
+
+          <label for="priority">Priority:</label>
+          <select id="priority" name="priority" required>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+
+          <label for="deadline">Deadline:</label>
+          <input type="date" id="deadline" name="deadline" required>
+
+          <input type="hidden" id="todo-id" name="todo-id">
+
+          <button type="submit">Submit</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Todo Cards -->
+    <div id="todo-container"></div>
+  </main>
+
+  <div id="footer"></div>
+
+  <script src="./js/navbar.js" ></script>
+  <script type="module" src="js/footer.js" defer></script>
+  <script src="./js/todo.js" ></script>
+</body>
+</html>
